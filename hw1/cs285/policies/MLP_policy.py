@@ -78,16 +78,17 @@ class MLPPolicy(BasePolicy):
     # query this policy with observation(s) to get selected action(s)
     def get_action(self, obs):
 
-        if len(obs.shape)>1:
+        if len(obs.shape) > 1:
             observation = obs
         else:
             observation = obs[None]
 
+        action = self.sess.run(self.sample_ac, feed_dict={self.observations_pl: observation})
         # TODO return the action that the policy prescribes
         # HINT1: you will need to call self.sess.run
         # HINT2: the tensor we're interested in evaluating is self.sample_ac
         # HINT3: in order to run self.sample_ac, it will need observation fed into the feed_dict
-        return TODO
+        return action
 
     # update/train this policy
     def update(self, observations, actions):
@@ -108,7 +109,7 @@ class MLPPolicySL(MLPPolicy):
         # placeholder for observations
         self.observations_pl = tf.placeholder(shape=[None, self.ob_dim], name="ob", dtype=tf.float32)
 
-        # placeholder for actions
+        # placeholder for actions (I dont think this does anything)
         self.actions_pl = tf.placeholder(shape=[None, self.ac_dim], name="ac", dtype=tf.float32)
 
         if self.training:
@@ -121,10 +122,10 @@ class MLPPolicySL(MLPPolicy):
         # TODO define the loss that will be used to train this policy
         # HINT1: remember that we are doing supervised learning
         # HINT2: use tf.losses.mean_squared_error
-        self.loss = TODO
+        self.loss = tf.losses.mean_squared_error(true_actions, predicted_actions)
         self.train_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
 
     def update(self, observations, actions):
         assert(self.training, 'Policy must be created with training=True in order to perform training updates...')
-        self.sess.run(self.train_op, feed_dict={self.observations_pl: observations, self.acs_labels_na: actions})
-
+        loss, _ =  self.sess.run([self.loss, self.train_op], feed_dict={self.observations_pl: observations, self.acs_labels_na: actions})
+        return loss
